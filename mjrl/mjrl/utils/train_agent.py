@@ -89,9 +89,7 @@ def train_agent(job_name, agent,
     e = GymEnv(agent.env.env_id)
     currtime = "{0:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
     wandb.init(project="MyoChallenge", name="reorient-"+currtime, entity="pku_rl")
-    # print(currtime)
-    # print("aaa")
-    # print("aaa")
+
     # Load from any existing checkpoint, policy, statistics, etc.
     # Why no checkpointing.. :(
     i_start = _load_latest_policy_and_logs(agent,
