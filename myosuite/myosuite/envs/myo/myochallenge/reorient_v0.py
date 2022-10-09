@@ -19,7 +19,8 @@ class ReorientEnvV0(BaseV0):
         "rot_dist": 1.0,
         "obj_vel": 1.0,
         "drop": 1.0,
-        "tip_err": 0.2
+        "tip_err": 0.3,
+        "solved":3.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -99,6 +100,8 @@ class ReorientEnvV0(BaseV0):
             tip_pos = np.append(tip_pos, self.sim.data.site_xpos[self.my_tip_sids[isite]].copy())
         tip_pos = tip_pos.reshape(-1, 3)
 
+        # print(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1))
+
         obj_vel = np.abs(np.linalg.norm(obj_vel, axis=-1))
         tip_err = np.sum(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1))
         drop = pos_dist > self.drop_th
@@ -111,7 +114,7 @@ class ReorientEnvV0(BaseV0):
 
             # Optional Keys
             ('pos_dist', 1./(1.+pos_dist**2)),
-            ('rot_dist', -1.*rot_dist),
+            ('rot_dist', -0.5*rot_dist + 0.5/(1.+rot_dist**2)),
             ('obj_vel', -1.*obj_vel),
             ('drop', -1.*drop),
             ('tip_err', -1.*tip_err),
