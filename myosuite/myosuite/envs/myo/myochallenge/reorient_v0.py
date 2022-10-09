@@ -127,7 +127,6 @@ class ReorientEnvV0(BaseV0):
         self.sim.model.site_rgba[self.success_indicator_sid, :2] = np.array([0, 2]) if rwd_dict['solved'] else np.array([2, 0])
         return rwd_dict
 
-
     def get_metrics(self, paths, successful_steps=5):
         """
         Evaluate paths and report metrics
