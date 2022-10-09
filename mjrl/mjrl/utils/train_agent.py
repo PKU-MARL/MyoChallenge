@@ -76,6 +76,7 @@ def train_agent(job_name, agent,
                 ):
 
     np.random.seed(seed)
+
     if os.path.isdir(job_name) == False:
         os.mkdir(job_name)
     previous_dir = os.getcwd()
@@ -88,7 +89,7 @@ def train_agent(job_name, agent,
     mean_pol_perf = 0.0
     e = GymEnv(agent.env.env_id)
     currtime = "{0:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
-    wandb.init(project="MyoChallenge", name="reorient-"+currtime, entity="pku_rl")
+    wandb.init(project="MyoChallenge", name=job_name+currtime, entity="pku_rl")
 
     # Load from any existing checkpoint, policy, statistics, etc.
     # Why no checkpointing.. :(
