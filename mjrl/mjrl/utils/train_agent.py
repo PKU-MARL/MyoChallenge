@@ -10,7 +10,9 @@ import pickle
 import time as timer
 import os
 import copy
-
+import wandb
+import datetime
+import multiprocessing as mp
 
 def _load_latest_policy_and_logs(agent, *, policy_dir, logs_dir):
     """Loads the latest policy.
@@ -85,7 +87,11 @@ def train_agent(job_name, agent,
     train_curve = best_perf*np.ones(niter)
     mean_pol_perf = 0.0
     e = GymEnv(agent.env.env_id)
-
+    currtime = "{0:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
+    wandb.init(project="MyoChallenge", name="reorient-"+currtime, entity="pku_rl")
+    # print(currtime)
+    # print("aaa")
+    # print("aaa")
     # Load from any existing checkpoint, policy, statistics, etc.
     # Why no checkpointing.. :(
     i_start = _load_latest_policy_and_logs(agent,
@@ -97,6 +103,8 @@ def train_agent(job_name, agent,
     for i in range(i_start, niter):
         print("......................................................................................")
         print("ITERATION : %i " % i)
+        
+
 
         if train_curve[i-1] > best_perf:
             best_policy = copy.deepcopy(agent.policy)
@@ -111,12 +119,15 @@ def train_agent(job_name, agent,
             print("Performing evaluation rollouts ........")
             eval_paths = sample_paths(num_traj=evaluation_rollouts, policy=agent.policy, num_cpu=num_cpu,
                                       env=e.env_id, eval_mode=True, base_seed=seed)
+            
             mean_pol_perf = np.mean([np.sum(path['rewards']) for path in eval_paths])
+            
             if agent.save_logs:
                 agent.logger.log_kv('eval_score', mean_pol_perf)
                 try:
                     eval_success = e.env.env.evaluate_success(eval_paths)
                     agent.logger.log_kv('eval_success', eval_success)
+                    wandb.log({'eval_score': mean_pol_perf, "eval_success": eval_success})
                 except:
                     pass
 

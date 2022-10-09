@@ -10,7 +10,7 @@ import gym
 
 from myosuite.envs.myo.base_v0 import BaseV0
 from myosuite.utils.quat_math import mat2euler, euler2quat
-
+import wandb
 class ReorientEnvV0(BaseV0):
 
     DEFAULT_OBS_KEYS = ['hand_qpos', 'hand_qvel', 'obj_pos', 'goal_pos', 'pos_err', 'obj_rot', 'goal_rot', 'rot_err']
@@ -22,13 +22,14 @@ class ReorientEnvV0(BaseV0):
         "tip_err": 0.3,
         "solved":3.0
     }
-
+    
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
         # Two step construction (init+setup) is required for pickling to work correctly.
         gym.utils.EzPickle.__init__(self, model_path, obsd_model_path, seed, **kwargs)
         super().__init__(model_path=model_path, obsd_model_path=obsd_model_path, seed=seed)
         self._setup(**kwargs)
 
+        
     def _setup(self,
             obs_keys:list = DEFAULT_OBS_KEYS,
             weighted_reward_keys:list = DEFAULT_RWD_KEYS_AND_WEIGHTS,
@@ -125,7 +126,7 @@ class ReorientEnvV0(BaseV0):
             ('done', drop),
         ))
         rwd_dict['dense'] = np.sum([wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0)
-
+        
         # Sucess Indicator
         self.sim.model.site_rgba[self.success_indicator_sid, :2] = np.array([0, 2]) if rwd_dict['solved'] else np.array([2, 0])
         return rwd_dict
