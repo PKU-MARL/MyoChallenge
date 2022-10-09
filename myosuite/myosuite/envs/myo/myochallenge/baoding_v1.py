@@ -163,8 +163,8 @@ class BaodingEnvV1(BaseV0):
             # Examples: Env comes pre-packaged with two keys pos_dist_1 and pos_dist_2
 
             # Optional Keys
-            ('pos_dist_1',      -1.*target1_dist),
-            ('pos_dist_2',      -1.*target2_dist),
+            ('pos_dist_1',      1./(target1_dist**2+1)),
+            ('pos_dist_2',      1./(target2_dist**2+1)),
             # Must keys
             ('act_reg',         -1.*act_mag),
             ('sparse',          -target_dist),
