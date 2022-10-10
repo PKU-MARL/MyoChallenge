@@ -27,8 +27,12 @@ class BaodingEnvV1(BaseV0):
         'target1_err', 'target2_err',
         ]
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-       'pos_dist_1':5.0,
-       'pos_dist_2':5.0,
+        'pos_dist_1': 5.0,
+        'pos_dist_2': 5.0,
+        "obj_vel": 0.0,
+        "drop": 1.0,
+        'tip_err': 0.01,
+        'solved': 3.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -80,6 +84,12 @@ class BaodingEnvV1(BaseV0):
         self.target2_sid = self.sim.model.site_name2id('target2_site')
         self.sim.model.site_group[self.target1_sid] = 2
         self.sim.model.site_group[self.target2_sid] = 2
+
+        # custom sites
+        self.my_tip_sids = []
+        tip_site_name=['THtip', 'IFtip', 'MFtip', 'RFtip', 'LFtip']
+        for site in tip_site_name:
+                self.my_tip_sids.append(self.sim.model.site_name2id(site))
 
         super()._setup(obs_keys=obs_keys,
                     weighted_reward_keys=weighted_reward_keys,
@@ -156,6 +166,16 @@ class BaodingEnvV1(BaseV0):
         is_fall_2 = object2_pos < self.drop_th
         is_fall = np.logical_or(is_fall_1, is_fall_2) # keep both balls up
 
+        # finger tips
+        tip_pos = np.array([])
+        for isite in self.my_tip_sids:
+            tip_pos = np.append(tip_pos, self.sim.data.site_xpos[isite].copy())
+        tip_pos = tip_pos.reshape(-1, 3)
+
+        obj_vel = self.sim.data.site_xvelp[self.object1_sid] + self.sim.data.site_xvelp[self.object2_sid]
+        obj_vel = np.abs(np.linalg.norm(obj_vel, axis=-1))
+        tip_err = np.sum(np.linalg.norm((tip_pos - (obs_dict['object1_pos']+obs_dict['object2_pos']).reshape(1, 3)/2), axis=-1))
+
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
             # Update Optional Keys section below
@@ -165,13 +185,16 @@ class BaodingEnvV1(BaseV0):
             # Optional Keys
             ('pos_dist_1',      1./(target1_dist**2+1)),
             ('pos_dist_2',      1./(target2_dist**2+1)),
+            ('tip_err',             -1.*tip_err),
+            ('obj_vel',            -1.*obj_vel),
+            ('drop',                -1.*is_fall),
             # Must keys
             ('act_reg',         -1.*act_mag),
             ('sparse',          -target_dist),
             ('solved',          (target1_dist < self.proximity_th)*(target2_dist < self.proximity_th)*(~is_fall)),
             ('done',            is_fall),
         ))
-        rwd_dict['dense'] = np.sum([wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0)
+        rwd_dict['dense'] = np.sum(np.array([wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], dtype=object), axis=0)
 
         # Sucess Indicator
         self.sim.model.geom_rgba[self.object1_gid, :2] = np.array([1, 1]) if target1_dist < self.proximity_th else np.array([0.5, 0.5])

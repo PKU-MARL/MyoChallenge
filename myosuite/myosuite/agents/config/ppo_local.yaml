@@ -7,7 +7,7 @@ env               :   myosuite-v1          # placeholder name, not a real env
 algorithm         :   NPG
 seed              :   123
 sample_mode       :   trajectories
-rl_num_traj       :   512
+rl_num_traj       :   384
 rl_num_samples    :   0                # will be ignored when sample_mode=trajectories
 num_cpu           :   32
 rl_num_iter       :   1051

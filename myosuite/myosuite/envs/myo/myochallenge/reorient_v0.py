@@ -90,9 +90,9 @@ class ReorientEnvV0(BaseV0):
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
-        pos_dist = np.abs(np.linalg.norm(self.obs_dict['pos_err'], axis=-1))
-        rot_dist = np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1))
-        act_mag = np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0
+        pos_dist = float(np.abs(np.linalg.norm(self.obs_dict['pos_err'], axis=-1)))
+        rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
+        act_mag = float(np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0)
 
         obj_vel = self.sim.data.site_xvelp[self.object_sid]
         tip_pos = np.array([])
@@ -103,8 +103,8 @@ class ReorientEnvV0(BaseV0):
         # print(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1))
 
         obj_vel = np.abs(np.linalg.norm(obj_vel, axis=-1))
-        tip_err = np.sum(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1))
-        drop = pos_dist > self.drop_th
+        tip_err = float(np.sum(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1)))
+        drop = float(pos_dist > self.drop_th)
 
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
@@ -124,7 +124,9 @@ class ReorientEnvV0(BaseV0):
             ('solved', (pos_dist<self.pos_th) and (rot_dist<self.rot_th) and (not drop) ),
             ('done', drop),
         ))
-        rwd_dict['dense'] = np.sum([wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0)
+
+        rew_list = [wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()]
+        rwd_dict['dense'] = np.sum(np.array(rew_list, dtype=object), axis=0)
 
         # Sucess Indicator
         self.sim.model.site_rgba[self.success_indicator_sid, :2] = np.array([0, 2]) if rwd_dict['solved'] else np.array([2, 0])
