@@ -27,12 +27,12 @@ class BaodingEnvV1(BaseV0):
         'target1_err', 'target2_err',
         ]
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        'pos_dist_1': 5.0,
-        'pos_dist_2': 5.0,
+        'pos_dist_1': 1.0,
+        'pos_dist_2': 1.0,
         "obj_vel": 0.0,
-        "drop": 1.0,
+        "drop": 3.0,
         'tip_err': 0.01,
-        'solved': 3.0
+        'solved': 1.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -183,8 +183,8 @@ class BaodingEnvV1(BaseV0):
             # Examples: Env comes pre-packaged with two keys pos_dist_1 and pos_dist_2
 
             # Optional Keys
-            ('pos_dist_1',      1./(target1_dist**2+1)),
-            ('pos_dist_2',      1./(target2_dist**2+1)),
+            ('pos_dist_1',      -1.*target1_dist + 1./(target1_dist**2+1)),
+            ('pos_dist_2',      -1.*target2_dist + 1./(target2_dist**2+1)),
             ('tip_err',             -1.*tip_err),
             ('obj_vel',            -1.*obj_vel),
             ('drop',                -1.*is_fall),
