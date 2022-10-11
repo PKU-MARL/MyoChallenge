@@ -4,19 +4,19 @@ default:
 
 # general inputs
 env               :   myosuite-v1          # placeholder name, not a real env
-algorithm         :   NPG
+algorithm         :   PPO
 seed              :   123
 sample_mode       :   trajectories
-rl_num_traj       :   512
+rl_num_traj       :   384
 rl_num_samples    :   0                # will be ignored when sample_mode=trajectories
 num_cpu           :   32
 rl_num_iter       :   1051
-save_freq         :   100
+save_freq         :   25
 eval_rollouts     :   10
 exp_notes         :   "Sample config for MyoSuite"
 
 # RL parameters (all params related to PG, value function etc.)
-policy_size       :   (64, 64)
+policy_size       :   (128, 128, 128)
 init_log_std      :   -0.25
 min_log_std       :   -1.0
 vf_hidden_size    :   (128, 128)
@@ -32,7 +32,7 @@ rl_gae            :   0.97
 
 alg_hyper_params  :   {'device': 'cuda:0'}
 
-job_name          :   npg_${env}
+job_name          :   ppo_${env}
 
 hydra:
     job:

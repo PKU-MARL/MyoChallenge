@@ -1,0 +1,28 @@
+default:
+- override hydra/output: local
+- override hydra/launcher: local
+env: myoChallengeBaodingP1-v1
+algorithm: NPG
+seed: 123
+sample_mode: trajectories
+rl_num_traj: 256
+rl_num_samples: 0
+num_cpu: 32
+rl_num_iter: 1051
+save_freq: 100
+eval_rollouts: 10
+exp_notes: Sample config for MyoSuite
+policy_size: (64, 64)
+init_log_std: -0.25
+min_log_std: -1.0
+vf_hidden_size: (128, 128)
+vf_batch_size: 64
+vf_epochs: 2
+vf_learn_rate: 0.0005
+learn_rate: 0.0001
+rl_step_size: 0.1
+rl_gamma: 0.995
+rl_gae: 0.97
+alg_hyper_params:
+  device: cuda:0
+job_name: accum_test
