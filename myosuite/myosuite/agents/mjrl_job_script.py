@@ -53,7 +53,7 @@ def train_loop(job_data) -> None:
     elif job_data.algorithm == 'PPO':
         # There are many hyperparameters for PPO. They can be specified in config for pass through
         # or defaults in the PPO algorithm will be used
-        agent = PPO(e, policy, baseline,  save_logs=True, **job_data.alg_hyper_params)
+        agent = PPO(e, policy, baseline, save_logs=True, **job_data.alg_hyper_params)
     else:
         NotImplementedError("Algorithm not found")
 
