@@ -27,10 +27,10 @@ fi
 
 if [ "$PassEvalAI" = "true" ] && [ "$PassDocker" = "true" ]; then
     # Install required dependences
-    pip install --upgrade pip
-    pip install torch
-    pip install -r requirements/agent.txt  -f https://download.pytorch.org/whl/torch_stable.html
-    pip install grpcio grpcio-tools myosuite
+    # pip install --upgrade pip
+    # pip install torch
+    # pip install -r requirements/agent.txt  -f https://download.pytorch.org/whl/torch_stable.html
+    # pip install grpcio grpcio-tools myosuite
 
     export PYTHONPATH="./utils/:$PYTHONPATH"
     export PYTHONPATH="./agent/:$PYTHONPATH"
@@ -38,8 +38,8 @@ if [ "$PassEvalAI" = "true" ] && [ "$PassDocker" = "true" ]; then
 
 
     chmod u+r+x ./test/test_die_agent.sh
-    chmod u+r+x ./test/test_bb_agent.sh
+    # chmod u+r+x ./test/test_bb_agent.sh
 
     ./test/test_die_agent.sh
-    ./test/test_bb_agent.sh
+    # ./test/test_bb_agent.sh
 fi
