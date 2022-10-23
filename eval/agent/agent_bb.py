@@ -20,7 +20,7 @@ else:
 ## additional dependences such as gym and mujoco_py might be needed
 path = '/'.join(os.path.realpath(__file__).split('/')[:-1])
 print(path)
-pi = pickle.load(open(path+'/policies/bb_test_policy.pickle', 'rb'))
+pi = pickle.load(open(path+'/policies/bb/policy_1000.pickle', 'rb'))
 print('Baoding Ball agent: policy loaded')
 ################################################
 

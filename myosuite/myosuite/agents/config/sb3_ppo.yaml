@@ -1,0 +1,10 @@
+default:
+  - override hydra/output: local
+  - override hydra/launcher: local
+
+# general inputs
+env: myosuite-v1 # placeholder name, not a real env
+algorithm: "PPO"
+num_cpu: 32
+job_name: "sb3_ppo"
+n_steps: 128

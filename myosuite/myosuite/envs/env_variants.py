@@ -67,7 +67,7 @@ def register_env_variant(env_id:str, variants:dict, variant_id=None, silent=Fals
     env_variant_specs.id = env_variant_id+env_variant_specs.id[-3:] if variant_id is None else variant_id
     register(
         id=env_variant_specs.id,
-        entry_point=env_variant_specs._entry_point,
+        entry_point=env_variant_specs.entry_point,
         max_episode_steps=env_variant_specs.max_episode_steps,
         kwargs=env_variant_specs._kwargs
     )
