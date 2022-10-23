@@ -30,11 +30,14 @@ while not flag_completed:
     flag_trial = None # this flag will detect the end of an episode/trial
     counter = 0
     repetition +=1
+    obs_list = []
     while not flag_trial :
 
         if counter == 0:
             print('DIE: Trial #'+str(repetition)+' Start Resetting the environment and get 1st obs')
             obs = rc.reset()
+        
+        obs_list.append(obs)
 
         ################################################
         ### B - HERE it is obtained the action from the model and passed to the remove environment
@@ -52,3 +55,9 @@ while not flag_completed:
         print(f"DIE: Agent Feedback iter {counter} --  trial solved: {flag_trial} -- task solved: {flag_completed}")
         print("*" * 100)
         counter +=1
+
+    # obs_list = np.array(obs_list)
+    # df1 = obs_list[:-1] - obs_list[1:]
+    # df2 = df1[:-1] - df1[1:]
+    # print(df2)
+    # exit()
