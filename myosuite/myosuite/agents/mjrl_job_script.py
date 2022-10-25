@@ -62,7 +62,7 @@ def train_loop(job_data) -> None:
     print("========================================")
 
     ts = timer.time()
-    train_agent(job_name="/home/zhongyifan/Desktop/MyoChallenge/myosuite/myosuite/agents/outputs/2022-10-18/11-17-40/npg_myoChallengeDieReorientP1-v0", #job_name=job_data.job_name,
+    train_agent(job_name="/home/chengdong/Desktop/MyoChallenge/myosuite/myosuite/agents/outputs/2022-10-22/11-17-40/npg_myoChallengeDieReorientP1-v0", #job_name=job_data.job_name,
                 agent=agent,
                 seed=job_data.seed,
                 niter=job_data.rl_num_iter,
