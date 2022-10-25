@@ -18,9 +18,9 @@ class ReorientEnvV0(BaseV0):
         "pos_dist": 3.0,
         "rot_dist": 1.0,
         "obj_vel": 1.0,
-        "drop": 1.0,
+        "drop": 2.0,
         "tip_err": 0.3,
-        "solved":3.0
+        "solved":0.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -113,6 +113,10 @@ class ReorientEnvV0(BaseV0):
         tip_err = float(np.sum(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1)))
         drop = float(pos_dist > self.drop_th)
 
+
+        a_pos = 3.0 / 1600
+        a_rot = 0.20593200000000003
+
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
             # Update Optional Keys section below
@@ -120,8 +124,8 @@ class ReorientEnvV0(BaseV0):
             # Examples: Env comes pre-packaged with two keys pos_dist and rot_dist
 
             # Optional Keys
-            ('pos_dist', 1./(1.+pos_dist**2)),
-            ('rot_dist', -0.5*rot_dist + 0.5/(1.+rot_dist**2)),
+            ('pos_dist', a_pos/(a_pos+pos_dist**2) - pos_dist * 10),
+            ('rot_dist', a_rot/(a_rot+rot_dist**2) - rot_dist),
             ('obj_vel', -1.*obj_vel),
             ('drop', -1.*drop),
             ('tip_err', -1.*tip_err),

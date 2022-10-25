@@ -8,9 +8,12 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
+            "program": "myosuite/myosuite/agents/hydra_mjrl_launcher.py",
+            "console": "externalTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-name", "ppo_local.yaml" , "env=myoChallengeDieReorientP2-v0"
+            ]
         }
     ]
 }

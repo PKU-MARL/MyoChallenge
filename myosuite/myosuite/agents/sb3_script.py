@@ -38,7 +38,7 @@ def make_env(env_id, rank, seed=0):
 # ===============================================================================
 # Process Inputs and configure job
 # ===============================================================================
-@hydra.main(config_name="hydra_npg_config", config_path="config")
+@hydra.main(config_name="hydra_myo_config_local", config_path="config")
 def configure_jobs(job_data):
     print("========================================")
     print("Job Configuration")
