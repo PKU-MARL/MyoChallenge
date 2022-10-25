@@ -5,7 +5,7 @@ from evotorch.logging import StdOutLogger, PandasLogger
 import torch
 
 env_name = "myosuite:myoChallengeBaodingP2-v1"
-load_policy_path = 'agent/policies/learned_policy_boading_origin.pkl'
+load_policy_path = 'agent/policies/learned_policy_boading_10.pkl'
 save_policy_path = 'agent/policies/learned_policy_boading_saved.pkl'
 
 env_config = {

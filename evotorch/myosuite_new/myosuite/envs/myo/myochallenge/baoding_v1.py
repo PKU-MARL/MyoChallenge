@@ -17,7 +17,7 @@ class Task(enum.Enum):
     BAODING_CCW = 2
 
 # Choose task
-WHICH_TASK = Task.BAODING_CCW
+WHICH_TASK = Task.HOLD
 
 class BaodingEnvV1(BaseV0):
 
@@ -56,8 +56,9 @@ class BaodingEnvV1(BaseV0):
         ):
 
         # user parameters
-        self.task_choice = task_choice
-        self.which_task = self.np_random.choice(Task) if task_choice == 'random' else Task(WHICH_TASK)
+        self.task_choice = task_choice  # random
+        # self.which_task = self.np_random.choice(Task) if task_choice == 'random' else Task(WHICH_TASK)
+        self.which_task = Task(WHICH_TASK)
         self.drop_th = drop_th
         self.proximity_th = proximity_th
         self.goal_time_period = goal_time_period
@@ -161,6 +162,8 @@ class BaodingEnvV1(BaseV0):
         # tracking error
         target1_dist = np.linalg.norm(obs_dict['target1_err'], axis=-1)
         target2_dist = np.linalg.norm(obs_dict['target2_err'], axis=-1)
+
+        dist_max = np.maximum(target1_dist, target2_dist)
         target_dist = target1_dist+target2_dist
         act_mag = np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0
 
@@ -170,7 +173,14 @@ class BaodingEnvV1(BaseV0):
         is_fall_1 = object1_pos < self.drop_th
         is_fall_2 = object2_pos < self.drop_th
         is_fall = np.logical_or(is_fall_1, is_fall_2) # keep both balls up
-
+        
+        obj1_vel = obs_dict['object1_velp']
+        obj2_vel = obs_dict['object2_velp']
+        vel_sum = np.linalg.norm(obj1_vel) + np.linalg.norm(obj2_vel)
+        close = np.linalg.norm(object1_pos-object2_pos)
+        constant = 1
+        # print(obs_dict)
+        # exit()
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
             # Update Optional Keys section below
@@ -180,14 +190,21 @@ class BaodingEnvV1(BaseV0):
             # Optional Keys
             ('pos_dist_1',      -1.*target1_dist),
             ('pos_dist_2',      -1.*target2_dist),
+            ('dist_max',      -1.*dist_max),
             # Must keys
             ('act_reg',         -1.*act_mag),
             ('sparse',          -target_dist),
             ('solved',          (target1_dist < self.proximity_th)*(target2_dist < self.proximity_th)*(~is_fall)),
             ('done',            is_fall),
+            # velocity penalty
+            ('vel',             -vel_sum), 
+            ("close",           -close),
+            
+            ("constant",         constant),
+            
         ))
+        # print([(wt, rwd_dict[key]) for key, wt in self.rwd_keys_wt.items()])
         rwd_dict['dense'] = np.sum([wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()], axis=0)
-
         # Sucess Indicator
         self.sim.model.geom_rgba[self.object1_gid, :2] = np.array([1, 1]) if target1_dist < self.proximity_th else np.array([0.5, 0.5])
         self.sim.model.geom_rgba[self.object2_gid, :2] = np.array([0.9, .7]) if target1_dist < self.proximity_th else np.array([0.5, 0.5])
@@ -206,6 +223,7 @@ class BaodingEnvV1(BaseV0):
 
         rwd_sparse = np.mean([np.mean(p['env_infos']['rwd_sparse']) for p in paths]) # return rwd/step
         rwd_dense = np.mean([np.sum(p['env_infos']['rwd_dense'])/self.horizon for p in paths]) # return rwd/step
+        print(rwd_dense)
 
         # log stats
         if logger:
@@ -214,7 +232,6 @@ class BaodingEnvV1(BaseV0):
             logger.log_kv('success_percentage', success_percentage)
             logger.log_kv('effort', effort)
         return success_percentage
-
 
     def get_metrics(self, paths):
         """
@@ -231,14 +248,15 @@ class BaodingEnvV1(BaseV0):
             }
         return metrics
 
-
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         # reset task
         if self.task_choice == 'random':
-            self.which_task = self.np_random.choice(Task)
-            self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
-            self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
+            # self.which_task = self.np_random.choice(Task)
+            self.which_task = Task(WHICH_TASK)
+            # self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
+            self.ball_1_starting_angle = self.np_random.uniform(low=0, high=np.pi/2.)
 
+            self.ball_2_starting_angle = self.ball_1_starting_angle-np.pi
         # reset counters
         self.counter=0
         self.x_radius=self.np_random.uniform(low=self.goal_xrange[0], high=self.goal_xrange[1])
@@ -271,9 +289,9 @@ class BaodingEnvV1(BaseV0):
         goal_traj = []
         if self.which_task==Task.HOLD:
             sign = 0
-        elif self.which_task==Task.BAODING_CW:
+        elif self.which_task==Task.BAODING_CW: # clockwise
             sign = -1
-        elif self.which_task==Task.BAODING_CCW:
+        elif self.which_task==Task.BAODING_CCW:  # counter clockwise.
             sign = 1
 
         # Target updates in continuous rotation
