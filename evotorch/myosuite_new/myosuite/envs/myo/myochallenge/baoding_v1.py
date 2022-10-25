@@ -17,7 +17,7 @@ class Task(enum.Enum):
     BAODING_CCW = 2
 
 # Choose task
-WHICH_TASK = Task.HOLD
+WHICH_TASK = Task.BAODING_CCW
 
 class BaodingEnvV1(BaseV0):
 
@@ -57,8 +57,8 @@ class BaodingEnvV1(BaseV0):
 
         # user parameters
         self.task_choice = task_choice  # random
-        # self.which_task = self.np_random.choice(Task) if task_choice == 'random' else Task(WHICH_TASK)
-        self.which_task = Task(WHICH_TASK)
+        self.which_task = self.np_random.choice(Task) if task_choice == 'random' else Task(WHICH_TASK)
+        # self.which_task = Task(WHICH_TASK)
         self.drop_th = drop_th
         self.proximity_th = proximity_th
         self.goal_time_period = goal_time_period
@@ -251,8 +251,8 @@ class BaodingEnvV1(BaseV0):
     def reset(self, reset_pose=None, reset_vel=None, reset_goal=None, time_period=None):
         # reset task
         if self.task_choice == 'random':
-            # self.which_task = self.np_random.choice(Task)
-            self.which_task = Task(WHICH_TASK)
+            self.which_task = self.np_random.choice(Task)
+            # self.which_task = Task(WHICH_TASK)
             # self.ball_1_starting_angle = self.np_random.uniform(low=0, high=2*np.pi)
             self.ball_1_starting_angle = self.np_random.uniform(low=0, high=np.pi/2.)
 
