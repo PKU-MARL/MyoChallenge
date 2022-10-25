@@ -1,0 +1,11 @@
+default:
+  - override hydra/output: local
+  - override hydra/launcher: local
+
+# general inputs
+env: myosuite-v1 # placeholder name, not a real env
+algorithm: "RecurrentPPO"
+num_cpu: 32
+job_name: "sb3_recurrent_ppo"
+policy: "MlpLstmPolicy"
+n_steps: 128
