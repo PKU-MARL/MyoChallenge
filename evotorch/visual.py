@@ -1,5 +1,5 @@
 env_name = "myosuite:myoChallengeBaodingP2-v1"
-policy_path = 'agent/policies/learned_policy_boading_saved.pkl'
+policy_path = 'agent/policies/learned_policy_boading_myo.pkl'
 import torch
 policy = torch.jit.load(policy_path)
 import myosuite
@@ -28,7 +28,7 @@ import numpy as np
 # List to track success rates
 success_rates = []
 # 10 episodes
-for _ in range(30):
+for _ in range(100):
     # Reset the environment and policy
     obs = reset_env(env)
     policy = torch.jit.load(policy_path)
