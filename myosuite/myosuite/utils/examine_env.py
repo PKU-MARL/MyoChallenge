@@ -47,7 +47,9 @@ class rand_policy():
 @click.option('-pp', '--plot_paths', type=bool, default=False, help=('2D-plot of individual paths'))
 @click.option('-ea', '--env_args', type=str, default=None, help=('env args. E.g. --env_args "{\'is_hardware\':True}"'))
 
-def main(env_name, policy_path, mode, seed, num_episodes, render, camera_name, output_dir, output_name, save_paths, plot_paths, env_args):
+@click.option('-re', '--recurrent_policy', type=bool, default=False, help=('The policy is recurrent, which requires both observation and last_state as input'))
+
+def main(env_name, policy_path, mode, seed, num_episodes, render, camera_name, output_dir, output_name, save_paths, plot_paths, env_args, recurrent_policy):
 
     # seed and load environments
     np.random.seed(seed)
@@ -75,6 +77,7 @@ def main(env_name, policy_path, mode, seed, num_episodes, render, camera_name, o
     # examine policy's behavior to recover paths
     paths = env.examine_policy(
         policy=pi,
+        recurrent_policy=recurrent_policy,
         horizon=env.spec.max_episode_steps,
         num_episodes=num_episodes,
         frame_size=(640,480),

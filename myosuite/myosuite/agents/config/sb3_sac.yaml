@@ -4,8 +4,11 @@ default:
 
 # general inputs
 env: myosuite-v1 # placeholder name, not a real env
-algorithm: "PPO"
+algorithm: "SAC"
 num_cpu: 32
-job_name: "sb3_ppo"
+job_name: "sb3_sac"
 n_steps: 128
 model_path: None
+policy: "MlpPolicy"
+train_freq: 720
+policy_kwargs: "dict(net_arch=[64, 64])"

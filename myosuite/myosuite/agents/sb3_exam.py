@@ -11,14 +11,14 @@ import os
 import time as timer
 import hydra
 import gym
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import PPO
 from sb3_contrib import RecurrentPPO
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import VecMonitor
+import numpy as np
 import myosuite
 
 def make_env(env_id, rank, seed=0):
@@ -50,44 +50,36 @@ def configure_jobs(job_data):
 
     print(OmegaConf.to_yaml(job_data, resolve=True))
 
-    # env = make_vec_env(job_data.env, n_envs=job_data.num_cpu)
-    env = SubprocVecEnv([make_env(job_data.env, i) for i in range(job_data.num_cpu)])
-    env = VecMonitor(env)
+    env = gym.make(job_data.env)
+    # env = make_vec_env(job_data.env, 1)
 
     model = None
     if job_data.algorithm == 'PPO':
-        model = PPO("MlpPolicy", env, n_steps=job_data.n_steps, verbose=1)
+        model = PPO.load(job_data.model_path)
     elif job_data.algorithm == 'RecurrentPPO':
-        model = RecurrentPPO(job_data.policy, env, n_steps=job_data.n_steps, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
-    elif job_data.algorithm == 'SAC' :
-        model = SAC(job_data.policy, env, train_freq=job_data.train_freq, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
+        model = RecurrentPPO.load(job_data.model_path)
 
-    model.learn(total_timesteps=32000,  reset_num_timesteps=True)
-    i = 0
-    while True :
-        i += 32000
-        # eval
+    # for key, val in model.get_parameters().items() :
+    #    print(val)
+    # exit()
+
+    # env = model.get_env()
+    # env.mujoco_render_frames = True
+    # cell and hidden state of the LSTM
+    lstm_states = None
+    num_envs = 1
+    # Episode start signals are used to reset the lstm states
+    episode_starts = np.ones((num_envs,), dtype=bool)
+    for i in range(10) :
         obs = env.reset()
-        average_solve = 0
-        last_solve = 0
-        sum_reward = 0
-        for t in range(job_data.n_steps) :
-            action, _states = model.predict(obs)
+        while True:
+            action, lstm_states = model.predict(obs, state=lstm_states, episode_start=episode_starts, deterministic=True)
             obs, rewards, dones, info = env.step(action)
-            solved =[x['solved'] for x in info]
-            average_solve += sum(solved)/len(solved)
-            sum_reward += sum(rewards)/len(rewards)
-            last_solve = solved
-        average_solve = average_solve/job_data.n_steps
-        last_solve = sum(last_solve)/len(last_solve)
-        average_reward = sum_reward/job_data.n_steps
-        print("last_solve", last_solve, "average_solve", average_solve, "average_reward", average_reward)
-
-        path = os.path.join("outputs", job_data.job_name, str(i))
-        print("saving to {}".format(path))
-        model.save(path)
-
-        model.learn(total_timesteps=32000,  reset_num_timesteps=False)
+            env.mj_render()
+            episode_starts = dones
+            if dones :
+                break
+        # env.render()
 
 if __name__ == "__main__":
     configure_jobs()

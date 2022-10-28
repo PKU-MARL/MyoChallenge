@@ -72,6 +72,8 @@ class ReorientEnvV0(BaseV0):
         self.obj_size_change = {'high':obj_size_change, 'low':-obj_size_change}
         self.obj_friction_range = {'high':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] + obj_friction_change,
                                     'low':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] - obj_friction_change}
+        self.friction = self.np_random.uniform(**self.obj_friction_range)
+        self.del_size = self.np_random.uniform(**self.obj_size_change)
 
         super()._setup(obs_keys=obs_keys,
                     weighted_reward_keys=weighted_reward_keys,
@@ -91,6 +93,8 @@ class ReorientEnvV0(BaseV0):
         obs_dict['obj_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.object_sid],(3,3)))
         obs_dict['goal_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.goal_sid],(3,3)))
         obs_dict['rot_err'] = obs_dict['goal_rot'] - obs_dict['obj_rot']
+        # obs_dict['friction'] = self.friction
+        # obs_dict['del_size'] = self.del_size
 
         if sim.model.na>0:
             obs_dict['act'] = sim.data.act[:].copy()
@@ -175,18 +179,19 @@ class ReorientEnvV0(BaseV0):
             euler2quat(self.np_random.uniform(high=self.goal_rot[1], low=self.goal_rot[0], size=3))
 
         # Die friction changes
-        self.sim.model.geom_friction[self.object_gid0:self.object_gidn] = self.np_random.uniform(**self.obj_friction_range)
+        self.friction = self.np_random.uniform(**self.obj_friction_range)
+        self.sim.model.geom_friction[self.object_gid0:self.object_gidn] = self.friction
 
         # Die and Target size changes
-        del_size = self.np_random.uniform(**self.obj_size_change)
+        self.del_size = self.np_random.uniform(**self.obj_size_change)
         # adjust size of target
-        self.sim.model.geom_size[self.target_gid] = self.target_default_size + del_size
+        self.sim.model.geom_size[self.target_gid] = self.target_default_size + self.del_size
         # adjust size of die
-        self.sim.model.geom_size[self.object_gid0:self.object_gidn-3][:,1] = self.object_default_size[:-3][:,1] + del_size
-        self.sim.model.geom_size[self.object_gidn-3:self.object_gidn] = self.object_default_size[-3:] + del_size
+        self.sim.model.geom_size[self.object_gid0:self.object_gidn-3][:,1] = self.object_default_size[:-3][:,1] + self.del_size
+        self.sim.model.geom_size[self.object_gidn-3:self.object_gidn] = self.object_default_size[-3:] + self.del_size
         # adjust boundary of die
         object_gpos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn]
-        self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + del_size)
+        self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + self.del_size)
 
         obs = super().reset()
         return obs

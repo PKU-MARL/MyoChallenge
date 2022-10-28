@@ -8,4 +8,6 @@ algorithm: "RecurrentPPO"
 num_cpu: 32
 job_name: "sb3_recurrent_ppo"
 policy: "MlpLstmPolicy"
+policy_kwargs: "{'lstm_hidden_size': 64}"
 n_steps: 128
+model_path: None
