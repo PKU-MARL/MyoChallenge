@@ -29,10 +29,11 @@ class BaodingEnvV1(BaseV0):
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
         'pos_dist_1': 1.0,
         'pos_dist_2': 1.0,
-        "obj_vel": 0.0,
-        "drop": 3.0,
-        'tip_err': 0.01,
-        'solved': 1.0
+        "obj_vel":  0.1,
+        "drop": 5.0,
+        'tip_err': -0.1,
+        'mid_dist': 1.0,
+        'solved': 5.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -101,9 +102,22 @@ class BaodingEnvV1(BaseV0):
         self.init_qpos[:-14] *= 0 # Use fully open as init pos
         self.init_qpos[0] = -1.57 # Palm up
 
+    def compute_angle(self, t) :
+
+        time_period = 6
+
+        if self.which_task==Task.BAODING_CW:
+            sign = -1
+        if self.which_task==Task.BAODING_CCW:
+            sign = 1
+
+        angle_before_shift = sign * 2 * np.pi * (t * 0.025 / time_period)
+
+        return np.array([angle_before_shift, angle_before_shift])
+
     def step(self, a):
         if self.which_task in [Task.BAODING_CW, Task.BAODING_CCW]:
-            desired_angle_wrt_palm = self.goal[self.counter].copy()
+            desired_angle_wrt_palm = self.compute_angle(self.counter)# self.goal[self.counter].copy()
             desired_angle_wrt_palm[0] = desired_angle_wrt_palm[0] + self.ball_1_starting_angle
             desired_angle_wrt_palm[1] = desired_angle_wrt_palm[1] + self.ball_2_starting_angle
 
@@ -127,7 +141,7 @@ class BaodingEnvV1(BaseV0):
 
     def get_obs_dict(self, sim):
         obs_dict = {}
-        obs_dict['t'] = np.array([sim.data.time])
+        obs_dict['t'] = np.array([0]) # np.array([sim.data.time])
         obs_dict['hand_pos'] = sim.data.qpos[:-14].copy() # 7*2 for ball's free joint, rest should be hand
 
         # object positions
@@ -174,7 +188,11 @@ class BaodingEnvV1(BaseV0):
 
         obj_vel = self.sim.data.site_xvelp[self.object1_sid] + self.sim.data.site_xvelp[self.object2_sid]
         obj_vel = np.abs(np.linalg.norm(obj_vel, axis=-1))
-        tip_err = np.sum(np.linalg.norm((tip_pos - (obs_dict['object1_pos']+obs_dict['object2_pos']).reshape(1, 3)/2), axis=-1))
+        tip_err = np.sum(np.linalg.norm((tip_pos - (obs_dict['target1_pos']+obs_dict['target1_pos']).reshape(1, 3)/2), axis=-1))
+
+        target_mid = (obs_dict['target1_pos']+obs_dict['target1_pos']).reshape(1, 3)/2
+        mid_dist1 = np.linalg.norm((obs_dict['object1_pos'] - target_mid), axis=-1)
+        mid_dist2 = np.linalg.norm((obs_dict['object2_pos'] - target_mid), axis=-1)
 
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
@@ -183,11 +201,12 @@ class BaodingEnvV1(BaseV0):
             # Examples: Env comes pre-packaged with two keys pos_dist_1 and pos_dist_2
 
             # Optional Keys
-            ('pos_dist_1',      -1.*target1_dist + 1./(target1_dist**2+1)),
-            ('pos_dist_2',      -1.*target2_dist + 1./(target2_dist**2+1)),
+            ('pos_dist_1',      -1.*target1_dist**2 + 1./(target1_dist**2+1)),
+            ('pos_dist_2',      -1.*target2_dist**2 + 1./(target2_dist**2+1)),
             ('tip_err',             -1.*tip_err),
-            ('obj_vel',            -1.*obj_vel),
+            ('obj_vel',            +1.*min(obj_vel, 0.1)),
             ('drop',                -1.*is_fall),
+            ('mid_dist',       -1.*mid_dist1**2 - 1.*mid_dist2**2),
             # Must keys
             ('act_reg',         -1.*act_mag),
             ('sparse',          -target_dist),

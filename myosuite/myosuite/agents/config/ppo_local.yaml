@@ -1,6 +1,6 @@
 default:
-  - override hydra/output: local
-  - override hydra/launcher: local
+    - override hydra/output: local
+    - override hydra/launcher: local
 
 # general inputs
 env: myosuite-v1 # placeholder name, not a real env
@@ -30,10 +30,10 @@ rl_gae: 0.97
 
 # Algorithm hyperparameters : if alg requires additional params, can be specified here (or defaults will be used)
 
-alg_hyper_params: { "device": "cuda:0" }
+alg_hyper_params  :   {'device': 'cuda:0'}
 
-job_name: npg_${env}
+job_name          :   ppo_${env}
 
 hydra:
-  job:
-    name: ${env}
+    job:
+        name: ${env}

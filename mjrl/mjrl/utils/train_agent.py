@@ -10,7 +10,7 @@ import pickle
 import time as timer
 import os
 import copy
-import wandb
+# import wandb
 import datetime
 
 def _load_latest_policy_and_logs(agent, *, policy_dir, logs_dir):
@@ -89,7 +89,7 @@ def train_agent(job_name, agent,
     mean_pol_perf = 0.0
     e = GymEnv(agent.env.env_id)
     currtime = "{0:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
-    wandb.init(project="MyoChallenge", name=job_name+currtime, entity="pku_rl")
+    # wandb.init(project="MyoChallenge", name=job_name+currtime, entity="pku_rl")
 
     # Load from any existing checkpoint, policy, statistics, etc.
     # Why no checkpointing.. :(
@@ -126,7 +126,7 @@ def train_agent(job_name, agent,
                 try:
                     eval_success = e.env.env.evaluate_success(eval_paths)
                     agent.logger.log_kv('eval_success', eval_success)
-                    wandb.log({'eval_score': mean_pol_perf, "eval_success": eval_success})
+                    # wandb.log({'eval_score': mean_pol_perf, "eval_success": eval_success})
                 except:
                     pass
 
