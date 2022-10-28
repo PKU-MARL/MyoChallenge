@@ -60,7 +60,7 @@ def configure_jobs(job_data):
     elif job_data.algorithm == 'RecurrentPPO':
         model = RecurrentPPO(job_data.policy, env, n_steps=job_data.n_steps, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
     elif job_data.algorithm == 'SAC' :
-        model = SAC(job_data.policy, env, train_freq=job_data.train_freq, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
+        model = SAC(job_data.policy, env, train_freq=job_data.train_freq, gradient_steps=job_data.gradient_steps, batch_size=job_data.batch_size, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
 
     model.learn(total_timesteps=32000,  reset_num_timesteps=True)
     i = 0
