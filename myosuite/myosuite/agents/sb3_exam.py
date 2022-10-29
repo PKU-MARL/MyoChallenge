@@ -11,7 +11,7 @@ import os
 import time as timer
 import hydra
 import gym
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 from sb3_contrib import RecurrentPPO
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
@@ -58,7 +58,8 @@ def configure_jobs(job_data):
         model = PPO.load(job_data.model_path)
     elif job_data.algorithm == 'RecurrentPPO':
         model = RecurrentPPO.load(job_data.model_path)
-
+    elif job_data.algorithm == 'SAC':
+        model = SAC.load(job_data.model_path)
     # for key, val in model.get_parameters().items() :
     #    print(val)
     # exit()
@@ -66,14 +67,15 @@ def configure_jobs(job_data):
     # env = model.get_env()
     # env.mujoco_render_frames = True
     # cell and hidden state of the LSTM
-    lstm_states = None
+    # lstm_states = None
     num_envs = 1
     # Episode start signals are used to reset the lstm states
     episode_starts = np.ones((num_envs,), dtype=bool)
     for i in range(10) :
         obs = env.reset()
         while True:
-            action, lstm_states = model.predict(obs, state=lstm_states, episode_start=episode_starts, deterministic=True)
+            action, _states = model.predict(obs, deterministic=True)
+            # action, lstm_states = model.predict(obs, state=lstm_states, episode_start=episode_starts, deterministic=True)
             obs, rewards, dones, info = env.step(action)
             env.mj_render()
             episode_starts = dones

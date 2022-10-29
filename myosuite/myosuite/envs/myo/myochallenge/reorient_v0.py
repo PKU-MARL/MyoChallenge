@@ -16,9 +16,9 @@ class ReorientEnvV0(BaseV0):
     DEFAULT_OBS_KEYS = ['hand_qpos', 'hand_qvel', 'obj_pos', 'goal_pos', 'pos_err', 'obj_rot', 'goal_rot', 'rot_err']
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
         "pos_dist": 3.0,
-        "rot_dist": 1.0,
+        "rot_dist": 3.0,
         "obj_vel": 1.0,
-        "drop": 2.0,
+        "drop": 3.0,
         "tip_err": 0.3,
         "solved":0.0
     }
@@ -52,6 +52,8 @@ class ReorientEnvV0(BaseV0):
         self.pos_th = pos_th
         self.rot_th = rot_th
         self.drop_th = drop_th
+        self.max_episode_steps = 150
+        self.counter = 0
 
                 # custom sites
         self.my_tip_sids = []
@@ -69,9 +71,10 @@ class ReorientEnvV0(BaseV0):
         self.object_default_size = self.sim.model.geom_size[self.object_gid0:self.object_gidn].copy()
         self.object_default_pos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn].copy()
 
-        self.obj_size_change = {'high':obj_size_change, 'low':-obj_size_change}
+        self.obj_size_change = {'high':np.ones((1,))*obj_size_change, 'low':np.ones((1,))*(-obj_size_change)}
         self.obj_friction_range = {'high':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] + obj_friction_change,
                                     'low':self.sim.model.geom_friction[self.object_gid0:self.object_gidn] - obj_friction_change}
+
         self.friction = self.np_random.uniform(**self.obj_friction_range)
         self.del_size = self.np_random.uniform(**self.obj_size_change)
 
@@ -81,6 +84,29 @@ class ReorientEnvV0(BaseV0):
         )
         self.init_qpos[:-7] *= 0 # Use fully open as init pos
         self.init_qpos[0] = -1.5 # Palm up
+
+    def update_dr(self, **kwargs) :
+
+        for key, val in kwargs.items() :
+            if key == "max_episode_steps" :
+                self.max_episode_steps = val
+                # print("max_episode_steps updated to {}".format(val))
+            elif key == "goal_pos" :
+                self.goal_pos = val
+            elif key == "goal_rot" :
+                self.goal_rot = val
+            elif key == "obj_size_change" :
+                self.obj_size_change = {
+                    'high':np.ones((1,))*val,
+                    'low':np.ones((1,))*(-val)
+                }
+            elif key == "obj_friction_change" :
+                self.obj_friction_change = {
+                    'high': np.ones((15, 3)) * np.array([1.0, 0.005, 0.00005]) + np.array(val),
+                    'low':np.ones((15, 3)) * np.array([1.0, 0.005, 0.00005]) - np.array(val)
+                }
+            else :
+                raise ValueError("Invalid key for update_dr")
 
     def get_obs_dict(self, sim):
         obs_dict = {}
@@ -93,8 +119,8 @@ class ReorientEnvV0(BaseV0):
         obs_dict['obj_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.object_sid],(3,3)))
         obs_dict['goal_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.goal_sid],(3,3)))
         obs_dict['rot_err'] = obs_dict['goal_rot'] - obs_dict['obj_rot']
-        # obs_dict['friction'] = self.friction
-        # obs_dict['del_size'] = self.del_size
+        obs_dict['friction'] = self.friction
+        obs_dict['del_size'] = self.del_size
 
         if sim.model.na>0:
             obs_dict['act'] = sim.data.act[:].copy()
@@ -137,7 +163,7 @@ class ReorientEnvV0(BaseV0):
             ('act_reg', -1.*act_mag),
             ('sparse', -rot_dist-10.0*pos_dist),
             ('solved', (pos_dist<self.pos_th) and (rot_dist<self.rot_th) and (not drop) ),
-            ('done', drop),
+            ('done', drop or (self.counter >= self.max_episode_steps)),
         ))
 
         rew_list = [wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()]
@@ -193,5 +219,14 @@ class ReorientEnvV0(BaseV0):
         object_gpos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn]
         self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + self.del_size)
 
+        # reset the counter for the number of steps
+        self.counter = 0
+
         obs = super().reset()
         return obs
+
+    def step(self, a):
+
+        self.counter += 1
+
+        return super().step(a)
