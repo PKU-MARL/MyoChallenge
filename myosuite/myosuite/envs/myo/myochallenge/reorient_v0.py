@@ -145,8 +145,10 @@ class ReorientEnvV0(BaseV0):
         drop = float(pos_dist > self.drop_th)
 
 
-        a_pos = 3.0 / 1600
-        a_rot = 0.20593200000000003
+        # a_pos = 3.0 / 1600
+        # a_rot = 0.20593200000000003
+        a_pos = 3./100
+        a_rot = 0.2
 
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
