@@ -16,11 +16,12 @@ class ReorientEnvV0(BaseV0):
     DEFAULT_OBS_KEYS = ['hand_qpos', 'hand_qvel', 'obj_pos', 'goal_pos', 'pos_err', 'obj_rot', 'goal_rot', 'rot_err']
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
         "pos_dist": 3.0,
-        "rot_dist": 3.0,
+        "rot_dist": 5.0,
         "obj_vel": 1.0,
-        "drop": 3.0,
+        "drop": 9.0,
         "tip_err": 0.3,
-        "solved":0.0
+        "solved": 1.0,
+        "const": 0.1
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -159,6 +160,7 @@ class ReorientEnvV0(BaseV0):
             ('obj_vel', -1.*obj_vel),
             ('drop', -1.*drop),
             ('tip_err', -1.*tip_err),
+            ('const', 1.0),
             # Must keys
             ('act_reg', -1.*act_mag),
             ('sparse', -rot_dist-10.0*pos_dist),
