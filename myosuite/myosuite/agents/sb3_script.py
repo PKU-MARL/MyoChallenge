@@ -84,7 +84,7 @@ def configure_jobs(job_data):
             learning_rate=job_data.learning_rate,
             gradient_steps=job_data.gradient_steps,
             batch_size=job_data.batch_size,
-            verbose=1,
+            verbose=0,
             policy_kwargs=eval(job_data.policy_kwargs)
         )
 
