@@ -9,19 +9,17 @@ import numpy as np
 import gym
 
 from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.utils.quat_math import mat2euler, euler2quat
+from myosuite.utils.quat_math import mat2euler, euler2quat, mat2quat, mulQuat, negQuat
 
 class ReorientEnvV0(BaseV0):
 
     DEFAULT_OBS_KEYS = ['hand_qpos', 'hand_qvel', 'obj_pos', 'goal_pos', 'pos_err', 'obj_rot', 'goal_rot', 'rot_err']
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
-        "pos_dist": 3.0,
-        "rot_dist": 5.0,
-        "obj_vel": 1.0,
-        "drop": 9.0,
-        "tip_err": 0.3,
-        "solved": 1.0,
-        "const": 0.1
+        "pos_dist": 10.0,
+        "rot_dist": 1.0,
+        "solved": 250.0,
+        "act_reg": 0.01,
+        "const": 0.0
     }
 
     def __init__(self, model_path, obsd_model_path=None, seed=None, **kwargs):
@@ -55,6 +53,7 @@ class ReorientEnvV0(BaseV0):
         self.drop_th = drop_th
         self.max_episode_steps = 150
         self.counter = 0
+        self.accum_solve = 0
 
                 # custom sites
         self.my_tip_sids = []
@@ -119,6 +118,8 @@ class ReorientEnvV0(BaseV0):
         obs_dict['pos_err'] = obs_dict['goal_pos'] - obs_dict['obj_pos'] - self.goal_obj_offset # correct for visualization offset between target and object
         obs_dict['obj_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.object_sid],(3,3)))
         obs_dict['goal_rot'] = mat2euler(np.reshape(sim.data.site_xmat[self.goal_sid],(3,3)))
+        obs_dict['obj_quat'] = mat2quat(np.reshape(sim.data.site_xmat[self.object_sid],(3,3)))
+        obs_dict['goal_quat'] = mat2quat(np.reshape(sim.data.site_xmat[self.goal_sid],(3,3)))
         obs_dict['rot_err'] = obs_dict['goal_rot'] - obs_dict['obj_rot']
         obs_dict['friction'] = self.friction
         obs_dict['del_size'] = self.del_size
@@ -128,8 +129,12 @@ class ReorientEnvV0(BaseV0):
         return obs_dict
 
     def get_reward_dict(self, obs_dict):
+
+        quat_diff = mulQuat(self.obs_dict['goal_quat'][0][0], negQuat(self.obs_dict['obj_quat'][0][0]))
+        rot_dist = 2.0 * np.arcsin(np.clip(np.linalg.norm(quat_diff[:3], axis=-1), a_min=0.0, a_max=1.0))
+
         pos_dist = float(np.abs(np.linalg.norm(self.obs_dict['pos_err'], axis=-1)))
-        rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
+        # rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
         act_mag = float(np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0)
 
         obj_vel = self.sim.data.site_xvelp[self.object_sid]
@@ -150,6 +155,8 @@ class ReorientEnvV0(BaseV0):
         a_pos = 3./100
         a_rot = 0.2
 
+        solved = (pos_dist<self.pos_th) and (rot_dist<self.rot_th) and (not drop)
+
         rwd_dict = collections.OrderedDict((
             # Perform reward tuning here --
             # Update Optional Keys section below
@@ -157,8 +164,8 @@ class ReorientEnvV0(BaseV0):
             # Examples: Env comes pre-packaged with two keys pos_dist and rot_dist
 
             # Optional Keys
-            ('pos_dist', a_pos/(a_pos+pos_dist**2) - pos_dist * 10),
-            ('rot_dist', a_rot/(a_rot+rot_dist**2) - rot_dist),
+            ('pos_dist', -pos_dist),
+            ('rot_dist', 1.0/(np.abs(rot_dist) + 0.1)),
             ('obj_vel', -1.*obj_vel),
             ('drop', -1.*drop),
             ('tip_err', -1.*tip_err),
@@ -166,10 +173,11 @@ class ReorientEnvV0(BaseV0):
             # Must keys
             ('act_reg', -1.*act_mag),
             ('sparse', -rot_dist-10.0*pos_dist),
-            ('solved', (pos_dist<self.pos_th) and (rot_dist<self.rot_th) and (not drop) ),
+            ('solved', solved),
             ('done', drop or (self.counter >= self.max_episode_steps)),
         ))
 
+        self.accum_solve += solved
         rew_list = [wt*rwd_dict[key] for key, wt in self.rwd_keys_wt.items()]
         rwd_dict['dense'] = np.sum(np.array(rew_list, dtype=object), axis=0)
 
@@ -201,7 +209,8 @@ class ReorientEnvV0(BaseV0):
             }
         return metrics
 
-    def reset(self):
+    def reset_target(self) :
+
         self.sim.model.body_pos[self.goal_bid] = self.goal_init_pos + \
             self.np_random.uniform( high=self.goal_pos[1], low=self.goal_pos[0], size=3)
 
@@ -223,8 +232,11 @@ class ReorientEnvV0(BaseV0):
         object_gpos = self.sim.model.geom_pos[self.object_gid0:self.object_gidn]
         self.sim.model.geom_pos[self.object_gid0:self.object_gidn] = object_gpos/abs(object_gpos+1e-16) * (abs(self.object_default_pos) + self.del_size)
 
+    def reset(self):
         # reset the counter for the number of steps
         self.counter = 0
+
+        self.reset_target()
 
         obs = super().reset()
         return obs
@@ -232,5 +244,9 @@ class ReorientEnvV0(BaseV0):
     def step(self, a):
 
         self.counter += 1
+
+        if self.accum_solve >= 5 :
+            self.accum_solve = 0
+            self.reset_target()
 
         return super().step(a)
