@@ -55,7 +55,7 @@ class ReorientEnvV0(BaseV0):
         self.counter = 0
         self.accum_solve = 0
 
-                # custom sites
+        # custom sites
         self.my_tip_sids = []
         tip_site_name=['THtip', 'IFtip', 'MFtip', 'RFtip', 'LFtip']
         for site in tip_site_name:
@@ -78,12 +78,23 @@ class ReorientEnvV0(BaseV0):
         self.friction = self.np_random.uniform(**self.obj_friction_range)
         self.del_size = self.np_random.uniform(**self.obj_size_change)
 
+        # asymmetric observation
+        DEFAULT_ASM_KEYS = ['friction', 'del_size', 'obj_vel', 'tip_pos']
+        self.asm_keys = DEFAULT_ASM_KEYS
+
         super()._setup(obs_keys=obs_keys,
                     weighted_reward_keys=weighted_reward_keys,
                     **kwargs,
         )
         self.init_qpos[:-7] *= 0 # Use fully open as init pos
         self.init_qpos[0] = -1.5 # Palm up
+
+        t, obs = self.obsdict2obsvec(self.obs_dict, self.obs_keys)
+        t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
+        shared = obs.shape[-1]
+        dedicate = asm_obs.shape[-1]
+        self.observation_space = gym.spaces.Box(-10*np.ones(shared+dedicate), 10*np.ones(shared+dedicate), dtype=np.float32)
+        self.asym_observation_space = gym.spaces.Box(-10*np.ones(dedicate), 10*np.ones(dedicate), dtype=np.float32)
 
     def update_dr(self, **kwargs) :
 
@@ -121,8 +132,16 @@ class ReorientEnvV0(BaseV0):
         obs_dict['obj_quat'] = mat2quat(np.reshape(sim.data.site_xmat[self.object_sid],(3,3)))
         obs_dict['goal_quat'] = mat2quat(np.reshape(sim.data.site_xmat[self.goal_sid],(3,3)))
         obs_dict['rot_err'] = obs_dict['goal_rot'] - obs_dict['obj_rot']
+
+        # god-perspective observation
         obs_dict['friction'] = self.friction
         obs_dict['del_size'] = self.del_size
+        obs_dict['obj_vel'] = self.sim.data.site_xvelp[self.object_sid]
+        tip_pos = np.array([])
+        for isite in range(len(self.my_tip_sids)):
+            tip_pos = np.append(tip_pos, self.sim.data.site_xpos[self.my_tip_sids[isite]].copy())
+        tip_pos = tip_pos.reshape(-1, 3)
+        obs_dict['tip_pos'] = tip_pos
 
         if sim.model.na>0:
             obs_dict['act'] = sim.data.act[:].copy()
@@ -137,11 +156,8 @@ class ReorientEnvV0(BaseV0):
         # rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
         act_mag = float(np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0)
 
-        obj_vel = self.sim.data.site_xvelp[self.object_sid]
-        tip_pos = np.array([])
-        for isite in range(len(self.my_tip_sids)):
-            tip_pos = np.append(tip_pos, self.sim.data.site_xpos[self.my_tip_sids[isite]].copy())
-        tip_pos = tip_pos.reshape(-1, 3)
+        obj_vel = self.obs_dict['obj_vel']
+        tip_pos = self.obs_dict['tip_pos']
 
         # print(np.linalg.norm(tip_pos - self.obs_dict['obj_pos'].reshape(1, 3), axis=-1))
 
@@ -239,7 +255,8 @@ class ReorientEnvV0(BaseV0):
         self.reset_target()
 
         obs = super().reset()
-        return obs
+        t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
+        return np.concatenate((obs, asm_obs))
 
     def step(self, a):
 
@@ -248,5 +265,7 @@ class ReorientEnvV0(BaseV0):
         if self.accum_solve >= 5 :
             self.accum_solve = 0
             self.reset_target()
-
-        return super().step(a)
+        obs, rewards, dones, info = super().step(a)
+        t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
+        obs = np.concatenate((obs, asm_obs))
+        return obs, rewards, dones, info

@@ -21,6 +21,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import VecMonitor
+from asymmetric_network import CustomNetwork, FlattenPrefixExtractor
 import myosuite
 
 def make_env(env_id, rank, seed=0):
@@ -78,7 +79,7 @@ def configure_jobs(job_data):
         model = RecurrentPPO(job_data.policy, env, n_steps=job_data.n_steps, verbose=1, policy_kwargs=eval(job_data.policy_kwargs))
     elif job_data.algorithm == 'SAC' :
         model = SAC(
-            job_data.policy,
+            eval(job_data.policy),
             env,
             train_freq=job_data.train_freq,
             learning_rate=job_data.learning_rate,
@@ -87,7 +88,6 @@ def configure_jobs(job_data):
             verbose=0,
             policy_kwargs=eval(job_data.policy_kwargs)
         )
-
 
     writer = SummaryWriter()
 

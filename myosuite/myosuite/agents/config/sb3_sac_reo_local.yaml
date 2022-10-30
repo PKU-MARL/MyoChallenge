@@ -9,14 +9,15 @@ num_cpu: 64
 job_name: "sb3_sac"
 n_steps: 128
 model_path: None
-policy: "MlpPolicy"
+policy: "CustomNetwork"
 train_freq: 1
 use_sde: True
 learning_rate: 0.0001
 gradient_steps: 4
 batch_size: 1024
 buffer_size: 2097152
-policy_kwargs: "dict(net_arch=[128, 128])"
+features_extractor_class: "FlattenPrefixExtractor"
+policy_kwargs: "{'features_extractor_class':FlattenPrefixExtractor, 'features_extractor_kwargs':{'actor_obs_dim': 102, 'critic_obs_dim': 166}}"
 
 curriculum:
   -
