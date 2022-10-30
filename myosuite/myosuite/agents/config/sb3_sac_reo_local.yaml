@@ -17,7 +17,7 @@ gradient_steps: 4
 batch_size: 1024
 buffer_size: 2097152
 features_extractor_class: "FlattenPrefixExtractor"
-policy_kwargs: "{'features_extractor_class':FlattenPrefixExtractor, 'features_extractor_kwargs':{'actor_obs_dim': 102, 'critic_obs_dim': 166}}"
+policy_kwargs: "{'net_arch': [256, 256, 128], 'features_extractor_class':FlattenPrefixExtractor, 'features_extractor_kwargs':{'actor_obs_dim': 102, 'critic_obs_dim': 166}}"
 
 curriculum:
   -

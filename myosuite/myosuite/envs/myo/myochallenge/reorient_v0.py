@@ -93,8 +93,8 @@ class ReorientEnvV0(BaseV0):
         t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
         shared = obs.shape[-1]
         dedicate = asm_obs.shape[-1]
-        self.observation_space = gym.spaces.Box(-10*np.ones(shared+dedicate), 10*np.ones(shared+dedicate), dtype=np.float32)
-        self.asym_observation_space = gym.spaces.Box(-10*np.ones(dedicate), 10*np.ones(dedicate), dtype=np.float32)
+        self.observation_space = gym.spaces.Box(-1*np.ones(shared+dedicate), 1*np.ones(shared+dedicate), dtype=np.float32)
+        self.asym_observation_space = gym.spaces.Box(-1*np.ones(dedicate), 1*np.ones(dedicate), dtype=np.float32)
 
     def update_dr(self, **kwargs) :
 
