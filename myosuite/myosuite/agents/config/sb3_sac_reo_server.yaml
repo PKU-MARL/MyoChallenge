@@ -5,7 +5,7 @@ default:
 # general inputs
 env: myosuite-v1 # placeholder name, not a real env
 algorithm: "SAC"
-num_cpu: 512
+num_cpu: 256
 job_name: "sb3_sac"
 n_steps: 128
 model_path: None
