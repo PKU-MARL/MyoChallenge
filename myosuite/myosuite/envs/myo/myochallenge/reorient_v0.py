@@ -9,7 +9,7 @@ import numpy as np
 import gym
 
 from myosuite.envs.myo.base_v0 import BaseV0
-from myosuite.utils.quat_math import mat2euler, euler2quat, mat2quat, mulQuat, negQuat
+from myosuite.utils.quat_math import mat2euler, euler2quat, mat2quat, mulQuat, negQuat, quat2mat
 
 class ReorientEnvV0(BaseV0):
 
@@ -230,8 +230,11 @@ class ReorientEnvV0(BaseV0):
         self.sim.model.body_pos[self.goal_bid] = self.goal_init_pos + \
             self.np_random.uniform( high=self.goal_pos[1], low=self.goal_pos[0], size=3)
 
-        self.sim.model.body_quat[self.goal_bid] = \
+        self.sim.model.body_quat[self.goal_bid] = mulQuat(
+            self.sim.model.body_quat[self.goal_bid],
             euler2quat(self.np_random.uniform(high=self.goal_rot[1], low=self.goal_rot[0], size=3))
+        )
+
 
         # Die friction changes
         self.friction = self.np_random.uniform(**self.obj_friction_range)
