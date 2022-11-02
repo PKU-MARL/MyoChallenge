@@ -156,11 +156,11 @@ class ReorientEnvV0(BaseV0):
 
     def get_reward_dict(self, obs_dict):
 
-        quat_diff = mulQuat(self.obs_dict['goal_quat'][0][0], negQuat(self.obs_dict['obj_quat'][0][0]))
-        rot_dist = 2.0 * np.arcsin(np.clip(np.linalg.norm(quat_diff[:3], axis=-1), a_min=0.0, a_max=1.0))
+        # quat_diff = mulQuat(self.obs_dict['goal_quat'][0][0], negQuat(self.obs_dict['obj_quat'][0][0]))
+        # rot_dist = 2.0 * np.arcsin(np.clip(np.linalg.norm(quat_diff[:3], axis=-1), a_min=0.0, a_max=1.0))
 
         pos_dist = float(np.abs(np.linalg.norm(self.obs_dict['pos_err'], axis=-1)))
-        # rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
+        rot_dist = float(np.abs(np.linalg.norm(self.obs_dict['rot_err'], axis=-1)))
         act_mag = float(np.linalg.norm(self.obs_dict['act'], axis=-1)/self.sim.model.na if self.sim.model.na !=0 else 0)
 
         obj_vel = self.obs_dict['obj_vel']
@@ -188,7 +188,7 @@ class ReorientEnvV0(BaseV0):
 
             # Optional Keys
             ('pos_dist', -pos_dist),
-            ('rot_dist', 1.0/(np.abs(rot_dist) + 0.1)),
+            ('rot_dist', a_rot/(rot_dist**2 + a_rot)),
             ('obj_vel', -1.*obj_vel),
             ('drop', -1.*drop),
             ('tip_err', -1.*tip_err),
