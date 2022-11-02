@@ -1,0 +1,54 @@
+default:
+  - override hydra/output: local
+  - override hydra/launcher: local
+
+# general inputs
+env: myosuite-v1 # placeholder name, not a real env
+algorithm: "SAC"
+num_cpu: 128
+job_name: "sb3_sac"
+n_steps: 128
+model_path: None
+policy: "CustomNetwork"
+train_freq: 1
+use_sde: True
+learning_rate: 0.0001
+gradient_steps: 1
+batch_size: 16384
+buffer_size: 2097152
+features_extractor_class: "FlattenPrefixExtractor"
+policy_kwargs: "{'net_arch': [256, 256, 128], 'features_extractor_class':FlattenPrefixExtractor, 'features_extractor_kwargs':{'actor_obs_dim': 102, 'critic_obs_dim': 166}}"
+
+curriculum:
+  -
+    total_steps: 20000000
+    dr_parameters:
+      max_episode_steps: 64
+      goal_pos: (-.010, .010)
+      goal_rot: (-1.57, 1.57)
+      obj_size_change: 0
+      obj_friction_change: (0.0, 0.0, 0.0)
+  -
+    total_steps: 20000000
+    dr_parameters:
+      max_episode_steps: 96
+      goal_pos: (-.015, .015)
+      goal_rot: (-2.00, 2.00)
+      obj_size_change: 0.002
+      obj_friction_change: (0.1, 0.0005, 0.00001)
+  -
+    total_steps: 20000000
+    dr_parameters:
+      max_episode_steps: 128
+      goal_pos: (-.020, .020)
+      goal_rot: (-2.50, 2.50)
+      obj_size_change: 0.005
+      obj_friction_change: (0.2, 0.001, 0.00002)
+  -
+    total_steps: 20000000
+    dr_parameters:
+      max_episode_steps: 150
+      goal_pos: (-.020, .020)
+      goal_rot: (-3.14, 3.14)
+      obj_size_change: 0.007
+      obj_friction_change: (0.2, 0.001, 0.00002)

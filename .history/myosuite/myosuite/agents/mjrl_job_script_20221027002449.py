@@ -12,7 +12,6 @@ Separate job scripts are provided to run few other algorithms
 
 from mjrl.utils.gym_env import GymEnv
 from mjrl.policies.gaussian_mlp import MLP
-from mjrl.policies.my_mlp import MyMLP
 from mjrl.baselines.quadratic_baseline import QuadraticBaseline
 from mjrl.baselines.mlp_baseline import MLPBaseline
 from mjrl.algos.npg_cg import NPG
@@ -31,7 +30,7 @@ def train_loop(job_data) -> None:
     policy_size = tuple(eval(job_data.policy_size))
     vf_hidden_size = tuple(eval(job_data.vf_hidden_size))
 
-    policy = MyMLP(e.spec, hidden_sizes=policy_size, seed=job_data.seed,
+    policy = MLP(e.spec, hidden_sizes=policy_size, seed=job_data.seed,
                  init_log_std=job_data.init_log_std, min_log_std=job_data.min_log_std)
     baseline = MLPBaseline(e.spec, reg_coef=1e-3, batch_size=job_data.vf_batch_size, hidden_sizes=vf_hidden_size,
                         epochs=job_data.vf_epochs, learn_rate=job_data.vf_learn_rate)
