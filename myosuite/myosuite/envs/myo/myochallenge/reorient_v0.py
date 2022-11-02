@@ -17,8 +17,9 @@ class ReorientEnvV0(BaseV0):
     DEFAULT_RWD_KEYS_AND_WEIGHTS = {
         "pos_dist": 10.0,
         "rot_dist": 1.0,
-        "solved": 250.0,
+        "solved": 25.0,
         "act_reg": 0.01,
+        "drop": 10,
         "const": 0.0
     }
 
@@ -54,6 +55,10 @@ class ReorientEnvV0(BaseV0):
         self.max_episode_steps = 150
         self.counter = 0
         self.accum_solve = 0
+        self.asym = False
+
+        if "asym" in kwargs :
+            self.asym = True
 
         # custom sites
         self.my_tip_sids = []
@@ -93,8 +98,10 @@ class ReorientEnvV0(BaseV0):
         t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
         shared = obs.shape[-1]
         dedicate = asm_obs.shape[-1]
-        self.observation_space = gym.spaces.Box(-1*np.ones(shared+dedicate), 1*np.ones(shared+dedicate), dtype=np.float32)
-        self.asym_observation_space = gym.spaces.Box(-1*np.ones(dedicate), 1*np.ones(dedicate), dtype=np.float32)
+
+        if self.asym :
+            self.observation_space = gym.spaces.Box(-1*np.ones(shared+dedicate), 1*np.ones(shared+dedicate), dtype=np.float32)
+            self.asym_observation_space = gym.spaces.Box(-1*np.ones(dedicate), 1*np.ones(dedicate), dtype=np.float32)
 
     def update_dr(self, **kwargs) :
 
@@ -225,15 +232,18 @@ class ReorientEnvV0(BaseV0):
             }
         return metrics
 
-    def reset_target(self) :
+    def reset_target(self, first_time = False) :
 
         self.sim.model.body_pos[self.goal_bid] = self.goal_init_pos + \
             self.np_random.uniform( high=self.goal_pos[1], low=self.goal_pos[0], size=3)
 
-        self.sim.model.body_quat[self.goal_bid] = mulQuat(
-            self.sim.model.body_quat[self.goal_bid],
-            euler2quat(self.np_random.uniform(high=self.goal_rot[1], low=self.goal_rot[0], size=3))
-        )
+        if not first_time :
+            self.sim.model.body_quat[self.goal_bid] = mulQuat(
+                self.sim.model.body_quat[self.goal_bid],
+                euler2quat(self.np_random.uniform(high=self.goal_rot[1], low=self.goal_rot[0], size=3))
+            )
+        else :
+            self.sim.model.body_quat[self.goal_bid] = euler2quat(self.np_random.uniform(high=self.goal_rot[1], low=self.goal_rot[0], size=3))
 
 
         # Die friction changes
@@ -255,11 +265,14 @@ class ReorientEnvV0(BaseV0):
         # reset the counter for the number of steps
         self.counter = 0
 
-        self.reset_target()
+        self.reset_target(first_time=True)
 
         obs = super().reset()
-        t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
-        return np.concatenate((obs, asm_obs))
+        if self.asym :
+            t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
+            return np.concatenate((obs, asm_obs))
+        else :
+            return obs
 
     def step(self, a):
 
@@ -269,6 +282,7 @@ class ReorientEnvV0(BaseV0):
             self.accum_solve = 0
             self.reset_target()
         obs, rewards, dones, info = super().step(a)
-        t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
-        obs = np.concatenate((obs, asm_obs))
+        if self.asym :
+            t, asm_obs = self.obsdict2obsvec(self.obs_dict, self.asm_keys)
+            obs = np.concatenate((obs, asm_obs))
         return obs, rewards, dones, info

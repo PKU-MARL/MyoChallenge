@@ -73,14 +73,17 @@ def configure_jobs(job_data):
     episode_starts = np.ones((num_envs,), dtype=bool)
     for i in range(10) :
         obs = env.reset()
+        total_reward = 0
         while True:
             action, _states = model.predict(obs, deterministic=True)
             # action, lstm_states = model.predict(obs, state=lstm_states, episode_start=episode_starts, deterministic=True)
             obs, rewards, dones, info = env.step(action)
+            total_reward += rewards
             env.mj_render()
             episode_starts = dones
             if dones :
                 break
+        print("reward: ", total_reward)
         # env.render()
 
 if __name__ == "__main__":

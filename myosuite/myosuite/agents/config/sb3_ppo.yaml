@@ -5,7 +5,50 @@ default:
 # general inputs
 env: myosuite-v1 # placeholder name, not a real env
 algorithm: "PPO"
-num_cpu: 32
+num_cpu: 64
 job_name: "sb3_ppo"
-n_steps: 128
 model_path: None
+n_steps: 128  # for eval
+
+ppo_config:
+  n_steps: 128
+  batch_size: 128
+  target_kl: 0.016
+  ent_coef: 0
+  learning_rate: 0.00001
+  policy_kwargs:
+    net_arch: [256, 256, 128]
+
+curriculum:
+  # -
+  #   total_steps: 20000000
+  #   dr_parameters:
+  #     max_episode_steps: 64
+  #     goal_pos: (-.010, .010)
+  #     goal_rot: (-1.57, 1.57)
+  #     obj_size_change: 0
+  #     obj_friction_change: (0.0, 0.0, 0.0)
+  # -
+  #   total_steps: 20000000
+  #   dr_parameters:
+  #     max_episode_steps: 96
+  #     goal_pos: (-.015, .015)
+  #     goal_rot: (-2.00, 2.00)
+  #     obj_size_change: 0.002
+  #     obj_friction_change: (0.1, 0.0005, 0.00001)
+  # -
+  #   total_steps: 20000000
+  #   dr_parameters:
+  #     max_episode_steps: 128
+  #     goal_pos: (-.020, .020)
+  #     goal_rot: (-2.50, 2.50)
+  #     obj_size_change: 0.005
+  #     obj_friction_change: (0.2, 0.001, 0.00002)
+  -
+    total_steps: 100000000
+    dr_parameters:
+      max_episode_steps: 150
+      goal_pos: (-.020, .020)
+      goal_rot: (-1.57, 1.57)
+      obj_size_change: 0.007
+      obj_friction_change: (0.2, 0.001, 0.00002)
